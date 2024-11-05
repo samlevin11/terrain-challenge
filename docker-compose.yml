@@ -1,6 +1,6 @@
 services:
   postgis:
-    image: postgis/postgis
+    image: pgpointcloud/pointcloud 
     container_name: postgis_terrain
     environment:
       POSTGRES_DB: terrain
@@ -10,6 +10,8 @@ services:
       - 5432:5432
     volumes:
       - postgis_data:/var/lib/postgresql/data
+      - ./enable_extensions.sql:/docker-entrypoint-initdb.d/enable_extensions.sql
+      
 
 volumes:
   postgis_data:
