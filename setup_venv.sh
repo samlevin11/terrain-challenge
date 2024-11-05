@@ -1,2 +1,3 @@
 python3 -m venv venv_terrain
-pip install ipykernel
+source venv_terrain/bin/activate
+pip install -r requirements.txt
