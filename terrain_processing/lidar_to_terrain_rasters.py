@@ -9,7 +9,7 @@ start = time.perf_counter()
 wbt = whitebox.WhiteboxTools()
 
 # Set data directory where LAZ was previously downloaded
-data_dir = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + '/../data')
+data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 print(f'setting WBT working directory: {data_dir}')
 wbt.set_working_dir(data_dir)
 

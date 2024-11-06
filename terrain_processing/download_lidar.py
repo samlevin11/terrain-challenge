@@ -5,7 +5,7 @@ import time
 start = time.perf_counter()
 
 # Create a directory to download the LAZ file to
-data_dir = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + '/../data')
+data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 print(f'creating data directory: {data_dir}')
 os.mkdir(data_dir)
 
