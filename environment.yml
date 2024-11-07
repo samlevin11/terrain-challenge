@@ -10,3 +10,5 @@ dependencies:
   - gdal
   - pdal=2.6.2
   - python-pdal
+  - laspy
+  - pyproj
