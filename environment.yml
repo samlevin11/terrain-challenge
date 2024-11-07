@@ -12,3 +12,4 @@ dependencies:
   - python-pdal
   - laspy
   - pyproj
+  - psycopg2

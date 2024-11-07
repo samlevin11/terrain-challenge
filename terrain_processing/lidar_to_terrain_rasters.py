@@ -33,6 +33,9 @@ print(raw_dem)
 
 print('defining DEM coordinate reference system')
 # EPSG:6342 (NAD83(2011) / UTM zone 13N)
+# CRS specified in product metadata
+# Not defined LAZ header
+# https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/WY_SouthCentral_2020_D20/WY_SouthCentral_3_2020/reports/vendor_provided_xml/WY_South_Central_3_2020_D20_Classified_Point_Cloud_Metadata_222437.xml
 crs = CRS.from_epsg(6342)
 with rasterio.open(os.path.join(data_dir, raw_dem), 'r+') as dem:
     dem.crs = crs
