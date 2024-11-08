@@ -11,6 +11,7 @@ services:
     volumes:
       - postgis_data:/var/lib/postgresql/data
       - ./enable_extensions.sql:/docker-entrypoint-initdb.d/enable_extensions.sql
+      - ./data:/data
       
 
 volumes:
