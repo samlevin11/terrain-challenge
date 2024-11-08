@@ -1,11 +1,12 @@
 import os
 import glob
-import psycopg2
-from osgeo import gdal, osr
 import subprocess
 import time
+import psycopg2
+from osgeo import gdal, osr
 
 start = time.perf_counter()
+
 
 def get_raster_srid(raster_path): 
     # Open raster with GDAL and get WKT projection info
@@ -15,28 +16,35 @@ def get_raster_srid(raster_path):
     # Use OGR to get the srid 
     srs=osr.SpatialReference()
     srs.ImportFromWkt(wkt)
+    # Return SRID based on whether spatial reference is projected or geographic
     if srs.IsProjected:
-        srid = srs.GetAuthorityCode('PROJCS')
+        srid_code = srs.GetAuthorityCode('PROJCS')
         auth_name = srs.GetAuthorityName('PROJCS')
-        print(f'PROJCS {auth_name}: {srid}')
+        print(f'PROJCS {auth_name}: {srid_code}')
     else:
-        srid = srs.GetAuthorityCode('GEOGCS')
+        srid_code = srs.GetAuthorityCode('GEOGCS')
         auth_name = srs.GetAuthorityName('GEOGCS')
-        print(f'GEOGCS {auth_name}: {srid}')
-    return srid
+        print(f'GEOGCS {auth_name}: {srid_code}')
+    return srid_code
 
 
-def host_to_container_data_path(host_path, container_path):
-    filename = os.path.split(host_path)[1]
-    container_path = os.path.join(container_path, filename)
-    return container_path
+def host_to_container_data_path(host_tiff_path, container_data_path):
+    # Convert path of host TIFF to it's container path
+    # ../data directory available in container via a mounted volume
+    filename = os.path.split(host_tiff_path)[1]
+    container_data_path = os.path.join(container_data_path, filename)
+    return container_data_path
 
 
-def raster_to_pgsql(container_tiff, srid):
-    # Use suffix of TIFF as table name (indicates terrain raster type)
+def raster_to_pgsql(container_tiff, srid_code):
+    # Use suffix of TIFF as table name
+    # Indicates terrain raster type (DEM, Aspect, Slope)
     tiff_basename = os.path.splitext(os.path.split(container_tiff)[1])[0]
     terrain_type = tiff_basename.split('_')[-1]
     out_table_name = 'public.' + terrain_type.lower()
+    # Connect to the container terminal and run raster2pgsql
+    # Since this program may not be available on the host machine
+    # It can more reliably be accessed via the container
     # -c create a new table
     # -s specify SRID
     # -F add column with file name
@@ -44,7 +52,7 @@ def raster_to_pgsql(container_tiff, srid):
     # -C apply raster constraints
     sql = subprocess.check_output([
         'docker', 'exec', '-i', 'postgis_terrain',
-        'raster2pgsql', '-c', '-s', srid, '-F', '-I', '-C', container_tiff, out_table_name
+        'raster2pgsql', '-c', '-s', srid_code, '-F', '-I', '-C', container_tiff, out_table_name
     ])
     return sql
 
@@ -77,9 +85,10 @@ host_tiffs = glob.glob(os.path.join(host_data_dir,'*.tif'))
 print(f'HOST GEOTIFFs({len(host_tiffs)}): {host_tiffs}')
 
 for host_tiff in host_tiffs:
+    print('----------------\n' + host_tiff)
     srid = get_raster_srid(host_tiff)
-    container_tiff = host_to_container_data_path(host_tiff, container_data_dir)
-    sql = raster_to_pgsql(container_tiff, srid)
-    execute_sql(sql)
+    container_path = host_to_container_data_path(host_tiff, container_data_dir)
+    rast_to_db_sql = raster_to_pgsql(container_path, srid)
+    execute_sql(rast_to_db_sql)
 
 print(f'RASTER IMPORT RUN TIME: {round(time.perf_counter() - start)} seconds')
