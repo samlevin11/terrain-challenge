@@ -1,6 +1,6 @@
 import os
-import requests
 import time
+import requests
 
 start = time.perf_counter()
 
@@ -17,8 +17,8 @@ laz_url = 'https://rockyweb.usgs.gov/vdelivery/Datasets/Staged/Elevation/LPC/Pro
 laz_path = os.path.join(data_dir, os.path.split(laz_url)[1])
 print(f'downloading to local file: {laz_path}')
 
-# Use request library to retrieve and write the file to local data 
-resp = requests.get(laz_url)
+# Use request library to retrieve and write the file to local data
+resp = requests.get(laz_url, timeout=10)
 with open(laz_path, 'wb') as file:
     file.write(resp.content)
 

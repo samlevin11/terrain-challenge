@@ -41,7 +41,7 @@ with rasterio.open(os.path.join(data_dir, raw_dem), 'r+') as dem:
     dem.crs = crs
 
 print('filling nodata holes')
-# Fill NoData holes in the DEM 
+# Fill NoData holes in the DEM
 filled_dem = os.path.splitext(laz_file)[0] + '_FilledDEM.tif'
 wbt.fill_missing_data(
     i=raw_dem,

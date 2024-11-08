@@ -8,12 +8,12 @@ from osgeo import gdal, osr
 start = time.perf_counter()
 
 
-def get_raster_srid(raster_path): 
+def get_raster_srid(raster_path):
     # Open raster with GDAL and get WKT projection info
     ds = gdal.Open(raster_path)
-    wkt = ds.GetProjection() 
+    wkt = ds.GetProjection()
     print(f'WKT {wkt}')
-    # Use OGR to get the srid 
+    # Use OGR to get the srid
     srs=osr.SpatialReference()
     srs.ImportFromWkt(wkt)
     # Return SRID based on whether spatial reference is projected or geographic
