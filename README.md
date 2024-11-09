@@ -27,6 +27,12 @@
 4. Import LIDAR data and terrain rasters into PostGIS
     ```bash
     python postgis_data_import/lidar_to_pgpointcloud.py
+    python postgis_data_import/terrain_to_postgis_rasters.py
+    ```
+
+5. Create PostGIS functions to clip terrain rasters
+    ```bash
+    docker exec -it postgis_terrain psql -U user -d terrain -f sql/func_clip_terrain.sql
     ```
 
 # Project Description
@@ -60,9 +66,14 @@ You may also confirm the PostGIS version (3.4).
 SELECT POSTGIS_FULL_VERSION();
 ```
 
-Two volumes are mounted to the container.
+Four volumes are mounted to the container.
 
-1.
+1. A volume to provide persistent PostGIS data storage
+2. A volume to provide startup SQL scripts for PostGIS
+3. A volume to make terrain data available within the `postgis_terrain` container
+4. A volume to make new SQL functions available within the `postgis_terrain` container 
+
+An initialization script mounted to `docker-entrypoint-initdb.d` is used to enable the `postgis_raster` extension and [enable GDAL drivers](https://postgis.net/docs/postgis_gdal_enabled_drivers.html) on startup.
 
 ## 2. LIDAR Processing
 Scripts in the `terrain_processing` directory are used to download and process LIDAR data into a collection of terrain rasters (DEM, slope, and aspect). 
@@ -86,3 +97,10 @@ The `lidar_to_pgpointcloud.py` script is used to import the original LAZ file in
 
 In PostGIS, the new `pointcloud` table stores this LIDAR as a table of `PcPatch` objects. Each patch represents a chip produced by PDAL, each storing a collection of approximately 400 `PcPoint` objects. While this table is not used further in this project, the `pgPointCloud` extension provides an efficient data storage model for LIDAR in PostGIS. Multiple LAS/LAZ datasets could be imported into this shared table to consolidate them into a single source.
 
+The `terrain_to_postgis_rasters.py` script is used to import the processed terrain rasters (DEM, slope, aspect) into PostGIS. It begins by listing `.tif` (GeoTIFF) files within the `data` directory. These rasters are accessible within the container via a mounted volume.
+
+For each GeoTIFF, its SRID is identified using [GDAL](https://gdal.org/en/latest/api/python/raster_api.html) and [OSR](https://gdal.org/en/latest/api/python/spatial_ref_api.html).  Using a Python `subprocess`, the [`raster2pgsql`](https://postgis.net/docs/using_raster_dataman.html#RT_Raster_Loader) program within the PostGIS container is run. Since this program may not be available on the host machine, it can be more reliably used via the container. This converts the rasters to a SQL command that may be used to load them in PostGIS. Various flags and configurations are provided to specify the name of the new raster table (based on the filename), SRID, enforcing raster contraints, etc. Due to the relatively small size of the data, tiling is not used in this example. 
+
+Finally, the SQL output of the `raster2pgsql` command is executed via a [psycopg](https://www.psycopg.org/docs/) database connection. This creates the terrain rasters in the PostGIS DB's persistent storage volume.
+
+## 4 PostGIS Raster Clipping Functions

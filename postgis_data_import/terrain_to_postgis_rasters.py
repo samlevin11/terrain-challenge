@@ -3,7 +3,7 @@ import glob
 import subprocess
 import time
 import psycopg2
-from osgeo import gdal, osr
+from osgeo import gdal
 
 start = time.perf_counter()
 
@@ -11,11 +11,8 @@ start = time.perf_counter()
 def get_raster_srid(raster_path):
     # Open raster with GDAL and get WKT projection info
     ds = gdal.Open(raster_path)
-    wkt = ds.GetProjection()
-    print(f'WKT {wkt}')
-    # Use OGR to get the srid
-    srs=osr.SpatialReference()
-    srs.ImportFromWkt(wkt)
+    # Get the OSR Spatial Reference
+    srs = ds.GetSpatialRef()
     # Return SRID based on whether spatial reference is projected or geographic
     if srs.IsProjected:
         srid_code = srs.GetAuthorityCode('PROJCS')
