@@ -1,7 +1,7 @@
 // Initialize the Leaflet map
 const map = L.map('map').setView([41.23133, -105.38772], 15);
 
-// Add OpenStreetMap and ESRI World Imagery base maps as tile layers
+// Add OpenStreetMap base maps as tile layers
 const osmBaseLayer = L.tileLayer(
     'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     {
@@ -12,19 +12,12 @@ const osmBaseLayer = L.tileLayer(
 );
 osmBaseLayer.addTo(map);
 
-const esriImageryLayer = L.tileLayer(
-    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-);
-esriImageryLayer.addTo(map);
+// Initialize layer controls
+// Added to map once AOI is created
+let layerControl = L.control.layers();
 
-const layerControl = L.control
-    .layers(
-        (baselayers = {
-            'ESRI World Imagery': esriImageryLayer,
-            'Open Street Map': osmBaseLayer,
-        })
-    )
-    .addTo(map);
+// For tracking the Area of Interest
+let aoi_layer;
 
 // Add and configure Geoman toolbar
 // Enable polygon drawing options
@@ -44,15 +37,12 @@ map.pm.addControls({
     rotateMode: false,
 });
 
-let layer;
-
 const clipTerrainButton = document.getElementById('clip-terrain-button');
 console.log('GET AOI BUTTON', clipTerrain);
 clipTerrainButton.disabled = true;
 
 map.on('pm:create', (e) => {
-    // console.log('Shape created:', e, e.layer.toGeoJSON());
-    layer = e.layer;
+    aoi_layer = e.layer;
 
     map.pm.addControls({
         drawPolygon: false,
@@ -64,12 +54,12 @@ map.on('pm:create', (e) => {
 
     clipTerrainButton.disabled = false;
 
-    layerControl.addOverlay(layer, 'Area of Interest');
+    layerControl.addOverlay(aoi_layer, 'Area of Interest');
+    layerControl.addTo(map);
 });
 
 map.on('pm:remove', (e) => {
-    // console.log('Shape removed:', e, e.layer.toGeoJSON());
-    layer = null;
+    aoi_layer = null;
 
     map.pm.addControls({
         drawPolygon: true,
@@ -83,17 +73,21 @@ map.on('pm:remove', (e) => {
 });
 
 async function clipTerrain() {
-    geojson = layer.toGeoJSON().geometry;
+    geojson = aoi_layer.toGeoJSON().geometry;
     console.log('AOI GEOJSON', geojson);
+    map.fitBounds(aoi_layer.getBounds());
 
-    const dem_tiff = fetch_clipped('clip_dem', geojson);
-    addTiffToMap(dem_tiff);
+    const dem_tiff = clip_terrain('clip_dem', geojson, 'Elevation');
+    const slope_tiff = clip_terrain('clip_slope', geojson, 'Slope');
+    const aspect_tiff = clip_terrain('clip_aspect', geojson, 'Aspect');
+}
 
-    const slope_tiff = fetch_clipped('clip_slope', geojson);
-    addTiffToMap(slope_tiff);
+async function clip_terrain(endpoint, geojson, layerName) {
+    const tiff = await fetch_clipped(endpoint, geojson);
+    const grLayer = await tiffToGeoRaster(tiff, layerName);
 
-    const aspect_tiff = fetch_clipped('clip_aspect', geojson);
-    addTiffToMap(aspect_tiff);
+    grLayer.addTo(map);
+    layerControl.addBaseLayer(grLayer, layerName);
 }
 
 function fetch_clipped(endpoint, geojson) {
@@ -106,19 +100,12 @@ function fetch_clipped(endpoint, geojson) {
     });
 }
 
-function addTiffToMap(tiff) {
-    tiff.then((response) => response.arrayBuffer()).then((arrayBuffer) => {
-        parseGeoraster(arrayBuffer).then((georaster) => {
-            console.log('georaster:', georaster);
-
-            const layer = new GeoRasterLayer({
-                georaster: georaster,
-            });
-            layer.addTo(map);
-
-            map.fitBounds(layer.getBounds());
-
-            layerControl.addOverlay(layer, 'RASTER');
-        });
+async function tiffToGeoRaster(tiff) {
+    const arrayBuffer = await tiff.arrayBuffer();
+    const georaster = await parseGeoraster(arrayBuffer);
+    console.log('georaster:', georaster);
+    const grLayer = new GeoRasterLayer({
+        georaster: georaster,
     });
+    return grLayer;
 }
