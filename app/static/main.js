@@ -28,9 +28,9 @@ map.pm.addControls({
 
 let layer;
 
-const getAoiButton = document.getElementById('get-aoi-button');
-console.log('GET AOI BUTTON', getAoiButton);
-getAoiButton.disabled = true;
+const clipTerrainButton = document.getElementById('clip-terrain-button');
+console.log('GET AOI BUTTON', clipTerrain);
+clipTerrainButton.disabled = true;
 
 map.on('pm:create', (e) => {
     // console.log('Shape created:', e, e.layer.toGeoJSON());
@@ -44,7 +44,7 @@ map.on('pm:create', (e) => {
         removalMode: true,
     });
 
-    getAoiButton.disabled = false;
+    clipTerrainButton.disabled = false;
 });
 
 map.on('pm:remove', (e) => {
@@ -59,11 +59,19 @@ map.on('pm:remove', (e) => {
         removalMode: false,
     });
 
-    getAoiButton.disabled = true;
+    clipTerrainButton.disabled = true;
 });
 
-function getAoi() {
+async function clipTerrain() {
     console.log('GET AOI!!', layer);
     geojson = layer.toGeoJSON().geometry;
     console.log('AOI GEOJSON', geojson);
+
+    await fetch('http://127.0.0.1:5000/clip_terrain', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(geojson),
+    });
 }

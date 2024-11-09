@@ -24,19 +24,24 @@ def clip_terrain():
 
 def run_clip_query(aoi_geojson_text): 
     conn = psycopg2.connect(
-        host="localhost",
-        port="5432",
-        dbname="terrain",
-        user="user",
-        password="password"
+        host='localhost',
+        port='5432',
+        dbname='terrain',
+        user='user',
+        password='password'
     )
     cursor = conn.cursor()
 
     cursor.execute(
-        "SELECT dem_tiff, slope_tiff, aspect_tiff FROM clip_terrain(%s)",
+        'SELECT dem_tiff, slope_tiff, aspect_tiff FROM clip_terrain(%s)',
         [aoi_geojson_text]
     )
     dem, slope, aspect = cursor.fetchone()
+    print(dem)
+
+    # Close the connection
+    cursor.close()
+    conn.close()
 
 
 if __name__ == '__main__':

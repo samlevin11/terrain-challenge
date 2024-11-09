@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <title>Terrain AOI</title>
+        <title>Clip Terrain</title>
         <link
             rel="stylesheet"
             href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -18,7 +18,7 @@
                 height: 100vh;
             }
 
-            #get-aoi-button {
+            #clip-terrain-button {
                 position: absolute;
                 top: 20px;
                 right: 20px;
@@ -29,7 +29,7 @@
     </head>
     <body>
         <div id="map"></div>
-        <button id="get-aoi-button" onclick="getAoi()">GET AOI</button>
+        <button id="clip-terrain-button" onclick="clipTerrain()">GET AOI</button>
 
         <script
             src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
