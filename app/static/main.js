@@ -14,10 +14,14 @@ osmBaseLayer.addTo(map);
 
 // Initialize layer controls
 // Added to map once AOI is created
-let layerControl = L.control.layers();
+let layerControl;
 
 // For tracking the Area of Interest
 let aoi_layer;
+
+let dem_layer;
+let slope_layer;
+let aspect_layer;
 
 // Add and configure Geoman toolbar
 // Enable polygon drawing options
@@ -38,10 +42,12 @@ map.pm.addControls({
 });
 
 const clipTerrainButton = document.getElementById('clip-terrain-button');
-console.log('GET AOI BUTTON', clipTerrain);
+console.log('GET AOI BUTTON', clipByAoi);
 clipTerrainButton.disabled = true;
 
 map.on('pm:create', (e) => {
+    layerControl = L.control.layers();
+
     aoi_layer = e.layer;
 
     map.pm.addControls({
@@ -70,24 +76,35 @@ map.on('pm:remove', (e) => {
     });
 
     clipTerrainButton.disabled = true;
+
+    layerControl.remove();
+    layerControl = null;
+
+    map.removeLayer(dem_layer);
+    map.removeLayer(slope_layer);
+    map.removeLayer(aspect_layer);
 });
 
-async function clipTerrain() {
+async function clipByAoi() {
     geojson = aoi_layer.toGeoJSON().geometry;
     console.log('AOI GEOJSON', geojson);
     map.fitBounds(aoi_layer.getBounds());
 
-    const dem_tiff = clip_terrain('clip_dem', geojson, 'Elevation');
-    const slope_tiff = clip_terrain('clip_slope', geojson, 'Slope');
-    const aspect_tiff = clip_terrain('clip_aspect', geojson, 'Aspect');
+    [dem_layer, slope_layer, aspect_layer] = await Promise.all([
+        clipTerrain('clip_dem', geojson, 'Elevation'),
+        clipTerrain('clip_slope', geojson, 'Slope'),
+        clipTerrain('clip_aspect', geojson, 'Aspect'),
+    ]);
 }
 
-async function clip_terrain(endpoint, geojson, layerName) {
+async function clipTerrain(endpoint, geojson, layerName) {
     const tiff = await fetch_clipped(endpoint, geojson);
     const grLayer = await tiffToGeoRaster(tiff, layerName);
-
+    console.log('GR layer', grLayer);
     grLayer.addTo(map);
     layerControl.addBaseLayer(grLayer, layerName);
+
+    return grLayer;
 }
 
 function fetch_clipped(endpoint, geojson) {
