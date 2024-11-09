@@ -67,11 +67,27 @@ async function clipTerrain() {
     geojson = layer.toGeoJSON().geometry;
     console.log('AOI GEOJSON', geojson);
 
-    await fetch('http://127.0.0.1:5000/clip_terrain', {
+    fetch('http://127.0.0.1:5000/clip_terrain', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(geojson),
-    });
+    })
+        .then((response) => response.arrayBuffer())
+        .then((arrayBuffer) => {
+            parseGeoraster(arrayBuffer).then((georaster) => {
+                console.log('georaster:', georaster);
+
+                const layer = new GeoRasterLayer({
+                    georaster: georaster,
+                });
+                layer.addTo(map);
+
+                map.fitBounds(layer.getBounds());
+            });
+        })
+        .catch((error) => {
+            console.error('Error fetching raster:', error);
+        });
 }

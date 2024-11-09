@@ -1,5 +1,5 @@
 import json
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, Response
 import psycopg2
 
 app = Flask(__name__)
@@ -17,9 +17,9 @@ def clip_terrain():
     print('AOI GEOJSON TEXT')
     print(aoi_geojson_text)
 
-    run_clip_query(aoi_geojson_text)
+    dem, slope, aspect = run_clip_query(aoi_geojson_text)
 
-    return 'TEMP RETURN'
+    return Response(dem, content_type='image/tiff')
 
 
 def run_clip_query(aoi_geojson_text): 
@@ -42,6 +42,8 @@ def run_clip_query(aoi_geojson_text):
     # Close the connection
     cursor.close()
     conn.close()
+
+    return dem, slope, aspect
 
 
 if __name__ == '__main__':
