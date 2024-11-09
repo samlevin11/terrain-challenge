@@ -63,31 +63,40 @@ map.on('pm:remove', (e) => {
 });
 
 async function clipTerrain() {
-    console.log('GET AOI!!', layer);
     geojson = layer.toGeoJSON().geometry;
     console.log('AOI GEOJSON', geojson);
 
-    fetch('http://127.0.0.1:5000/clip_dem', {
+    const dem_tiff = fetch_clipped('clip_dem', geojson);
+    addTiffToMap(dem_tiff);
+
+    const slope_tiff = fetch_clipped('clip_slope', geojson);
+    addTiffToMap(slope_tiff);
+
+    const aspect_tiff = fetch_clipped('clip_aspect', geojson);
+    addTiffToMap(aspect_tiff);
+}
+
+function fetch_clipped(endpoint, geojson) {
+    return fetch(`http://127.0.0.1:5000/${endpoint}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(geojson),
-    })
-        .then((response) => response.arrayBuffer())
-        .then((arrayBuffer) => {
-            parseGeoraster(arrayBuffer).then((georaster) => {
-                console.log('georaster:', georaster);
+    });
+}
 
-                const layer = new GeoRasterLayer({
-                    georaster: georaster,
-                });
-                layer.addTo(map);
+function addTiffToMap(tiff) {
+    tiff.then((response) => response.arrayBuffer()).then((arrayBuffer) => {
+        parseGeoraster(arrayBuffer).then((georaster) => {
+            console.log('georaster:', georaster);
 
-                map.fitBounds(layer.getBounds());
+            const layer = new GeoRasterLayer({
+                georaster: georaster,
             });
-        })
-        .catch((error) => {
-            console.error('Error fetching raster:', error);
+            layer.addTo(map);
+
+            map.fitBounds(layer.getBounds());
         });
+    });
 }
