@@ -1,12 +1,30 @@
 // Initialize the Leaflet map
 const map = L.map('map').setView([41.23133, -105.38772], 15);
 
-// Add OpenStreetMap base map as tile layer
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution:
-        '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-}).addTo(map);
+// Add OpenStreetMap and ESRI World Imagery base maps as tile layers
+const osmBaseLayer = L.tileLayer(
+    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+        maxZoom: 19,
+        attribution:
+            '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }
+);
+osmBaseLayer.addTo(map);
+
+const esriImageryLayer = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+);
+esriImageryLayer.addTo(map);
+
+const layerControl = L.control
+    .layers(
+        (baselayers = {
+            'ESRI World Imagery': esriImageryLayer,
+            'Open Street Map': osmBaseLayer,
+        })
+    )
+    .addTo(map);
 
 // Add and configure Geoman toolbar
 // Enable polygon drawing options
@@ -45,6 +63,8 @@ map.on('pm:create', (e) => {
     });
 
     clipTerrainButton.disabled = false;
+
+    layerControl.addOverlay(layer, 'Area of Interest');
 });
 
 map.on('pm:remove', (e) => {
@@ -97,6 +117,8 @@ function addTiffToMap(tiff) {
             layer.addTo(map);
 
             map.fitBounds(layer.getBounds());
+
+            layerControl.addOverlay(layer, 'RASTER');
         });
     });
 }

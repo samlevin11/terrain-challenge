@@ -13,6 +13,7 @@
             rel="stylesheet"
             href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css"
         />
+
         <style>
             #map {
                 height: 100vh;
@@ -20,8 +21,8 @@
 
             #clip-terrain-button {
                 position: absolute;
-                top: 20px;
-                right: 20px;
+                bottom: 20px;
+                left: 20px;
                 padding: 10px;
                 z-index: 400;
             }
@@ -29,7 +30,9 @@
     </head>
     <body>
         <div id="map"></div>
-        <button id="clip-terrain-button" onclick="clipTerrain()">CLIP TERRAIN</button>
+        <button id="clip-terrain-button" onclick="clipTerrain()">
+            CLIP TERRAIN
+        </button>
 
         <script
             src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
