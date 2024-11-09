@@ -12,17 +12,21 @@ def index():
 
 @app.route('/clip_terrain', methods=['POST'])
 def clip_terrain():
-    print('CLIP TERRAIN!!', request)
+    print('CLIP TERRAIN', request)
     aoi_geojson_text = json.dumps(request.json)
     print('AOI GEOJSON TEXT')
     print(aoi_geojson_text)
 
-    dem, slope, aspect = run_clip_query(aoi_geojson_text)
+    dem = run_clip_query(
+        aoi_geojson_text,
+        'SELECT ST_AsTIFF(clip_dem(%s))'
+    )
 
     return Response(dem, content_type='image/tiff')
 
 
-def run_clip_query(aoi_geojson_text): 
+def run_clip_query(aoi_geojson_text, terrain_query):
+    # Establish connection to terrain database
     conn = psycopg2.connect(
         host='localhost',
         port='5432',
@@ -32,18 +36,21 @@ def run_clip_query(aoi_geojson_text):
     )
     cursor = conn.cursor()
 
+    # Use the provided terrain_query string to call raster clipping functions
+    # Returns a TIFF byte array
     cursor.execute(
-        'SELECT dem_tiff, slope_tiff, aspect_tiff FROM clip_terrain(%s)',
+        terrain_query,
         [aoi_geojson_text]
     )
-    dem, slope, aspect = cursor.fetchone()
-    print(dem)
+    tiff_bytea = cursor.fetchone()[0]
+    print(tiff_bytea)
 
     # Close the connection
     cursor.close()
     conn.close()
 
-    return dem, slope, aspect
+    # return TIFF
+    return tiff_bytea
 
 
 if __name__ == '__main__':
