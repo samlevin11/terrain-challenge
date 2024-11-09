@@ -67,7 +67,7 @@ async function clipTerrain() {
     geojson = layer.toGeoJSON().geometry;
     console.log('AOI GEOJSON', geojson);
 
-    fetch('http://127.0.0.1:5000/clip_terrain', {
+    fetch('http://127.0.0.1:5000/clip_dem', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

@@ -10,19 +10,34 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/clip_terrain', methods=['POST'])
-def clip_terrain():
-    print('CLIP TERRAIN', request)
+@app.route('/clip_dem', methods=['POST'])
+def clip_dem():
     aoi_geojson_text = json.dumps(request.json)
-    print('AOI GEOJSON TEXT')
-    print(aoi_geojson_text)
-
     dem = run_clip_query(
         aoi_geojson_text,
         'SELECT ST_AsTIFF(clip_dem(%s))'
     )
-
     return Response(dem, content_type='image/tiff')
+
+
+@app.route('/clip_slope', methods=['POST'])
+def clip_slope():
+    aoi_geojson_text = json.dumps(request.json)
+    slope = run_clip_query(
+        aoi_geojson_text,
+        'SELECT ST_AsTIFF(clip_slope(%s))'
+    )
+    return Response(slope, content_type='image/tiff')
+
+
+@app.route('/clip_aspect', methods=['POST'])
+def clip_aspect():
+    aoi_geojson_text = json.dumps(request.json)
+    aspect = run_clip_query(
+        aoi_geojson_text,
+        'SELECT ST_AsTIFF(clip_aspect(%s))'
+    )
+    return Response(aspect, content_type='image/tiff')
 
 
 def run_clip_query(aoi_geojson_text, terrain_query):
