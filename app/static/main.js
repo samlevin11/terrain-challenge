@@ -98,16 +98,14 @@ async function clipByAoi() {
 }
 
 async function clipTerrain(endpoint, geojson, layerName) {
-    const tiff = await fetch_clipped(endpoint, geojson);
+    const tiff = await fetchClipped(endpoint, geojson);
     const grLayer = await tiffToGeoRaster(tiff, layerName);
-    console.log('GR layer', grLayer);
     grLayer.addTo(map);
     layerControl.addBaseLayer(grLayer, layerName);
-
     return grLayer;
 }
 
-function fetch_clipped(endpoint, geojson) {
+function fetchClipped(endpoint, geojson) {
     return fetch(`http://127.0.0.1:5000/${endpoint}`, {
         method: 'POST',
         headers: {
@@ -120,7 +118,6 @@ function fetch_clipped(endpoint, geojson) {
 async function tiffToGeoRaster(tiff) {
     const arrayBuffer = await tiff.arrayBuffer();
     const georaster = await parseGeoraster(arrayBuffer);
-    console.log('georaster:', georaster);
     const grLayer = new GeoRasterLayer({
         georaster: georaster,
     });
