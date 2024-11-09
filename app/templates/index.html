@@ -37,7 +37,7 @@
         ></script>
         <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.js"></script>
 
-        <script src="main.js"></script>
+        <script src="{{ url_for('static', filename='main.js') }}"></script>
 
         <button id="get-shapes-button" onclick="getAoi()">GET AOI</button>
     </body>
