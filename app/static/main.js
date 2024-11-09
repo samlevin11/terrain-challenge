@@ -26,11 +26,15 @@ map.pm.addControls({
     rotateMode: false,
 });
 
-let shape;
+let layer;
+
+const getAoiButton = document.getElementById('get-aoi-button');
+console.log('GET AOI BUTTON', getAoiButton);
+getAoiButton.disabled = true;
 
 map.on('pm:create', (e) => {
-    console.log('Shape created:', e, e.layer.toGeoJSON());
-    shape = e.layer.toGeoJSON();
+    // console.log('Shape created:', e, e.layer.toGeoJSON());
+    layer = e.layer;
 
     map.pm.addControls({
         drawPolygon: false,
@@ -39,11 +43,13 @@ map.on('pm:create', (e) => {
         dragMode: true,
         removalMode: true,
     });
+
+    getAoiButton.disabled = false;
 });
 
 map.on('pm:remove', (e) => {
-    console.log('Shape removed:', e, e.layer.toGeoJSON());
-    shape = null;
+    // console.log('Shape removed:', e, e.layer.toGeoJSON());
+    layer = null;
 
     map.pm.addControls({
         drawPolygon: true,
@@ -52,11 +58,12 @@ map.on('pm:remove', (e) => {
         dragMode: false,
         removalMode: false,
     });
+
+    getAoiButton.disabled = true;
 });
 
 function getAoi() {
-    console.log('CLICKED!!');
-    const layers = map.pm.getGeomanDrawLayers();
-    const geojson = layers.map((l) => l.toGeoJSON());
-    console.log('GEOJSON', geojson);
+    console.log('GET AOI!!', layer);
+    geojson = layer.toGeoJSON().geometry;
+    console.log('AOI GEOJSON', geojson);
 }

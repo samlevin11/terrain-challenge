@@ -18,7 +18,7 @@
                 height: 100vh;
             }
 
-            #get-shapes-button {
+            #get-aoi-button {
                 position: absolute;
                 top: 20px;
                 right: 20px;
@@ -29,6 +29,7 @@
     </head>
     <body>
         <div id="map"></div>
+        <button id="get-aoi-button" onclick="getAoi()">GET AOI</button>
 
         <script
             src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -38,7 +39,5 @@
         <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.js"></script>
 
         <script src="{{ url_for('static', filename='main.js') }}"></script>
-
-        <button id="get-shapes-button" onclick="getAoi()">GET AOI</button>
     </body>
 </html>
