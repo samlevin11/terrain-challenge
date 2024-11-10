@@ -1,11 +1,21 @@
 import os
 import json
+from dotenv import load_dotenv
 import pdal
 import time
 
 start = time.perf_counter()
 
 print('\n--------IMPORTING LIDAR TO POSTGIS POINT CLOUD--------')
+
+# Load environment variables from .env file
+load_dotenv()
+
+host = os.getenv('POSTGRES_HOST')
+dbname = os.getenv('POSTGRES_DB')
+user = os.getenv('POSTGRES_USER')
+password = os.getenv('POSTGRES_PASSWORD')
+port = os.getenv('POSTGRES_PORT')
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 laz_path = os.path.join(data_dir, 'USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640.laz')
@@ -24,8 +34,8 @@ pipeline_config = {
         },
         {
             "type": "writers.pgpointcloud",
-            "connection": "host='localhost' dbname='terrain' user='user' password='password' port='5432'",
-            "table": "pointcloud",
+            "connection": f"host='{host}' dbname='{dbname}' user='{user}' password='{password}' port='{port}'",
+            "table": "pointcloud_data",
             "srid": "6342",
             "overwrite": "true"
         }

@@ -1,17 +1,21 @@
+import os
 import json
+from dotenv import load_dotenv
 from flask import Flask, render_template, request, Response, stream_with_context
 import psycopg2
 
 app = Flask(__name__)
 
+# Load environment variables from .env file
+load_dotenv()
 
 def get_db_connection():
     conn = psycopg2.connect(
-        host='localhost',
-        port='5432',
-        dbname='terrain',
-        user='user',
-        password='password'
+        host=os.getenv('POSTGRES_HOST'),
+        port=os.getenv('POSTGRES_PORT'),
+        dbname=os.getenv('POSTGRES_DB'),
+        user=os.getenv('POSTGRES_USER'),
+        password=os.getenv('POSTGRES_PASSWORD')
     )
     return conn
 

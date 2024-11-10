@@ -2,12 +2,14 @@ services:
   postgis:
     image: pgpointcloud/pointcloud 
     container_name: postgis_terrain
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: terrain
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - 5432:5432
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
       - postgis_data:/var/lib/postgresql/data
       - ./enable_extensions.sql:/docker-entrypoint-initdb.d/enable_extensions.sql

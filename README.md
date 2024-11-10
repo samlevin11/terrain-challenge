@@ -22,24 +22,24 @@
 
 3. Download LIDAR data and process terrain
 
-    _Note: the initial data download may take a couple of minutes (approximately 68MB of LIDAR data)_
+    _Note: the initial data download may take a couple of minutes (approximately 69MB of LIDAR data)_
 
     ```bash
     python terrain_processing/download_lidar.py
     python terrain_processing/lidar_to_terrain_rasters.py
     ```
 
-4. Import LIDAR data and terrain rasters into PostGIS 
+4. Import LIDAR data and terrain rasters into PostGIS
 
     ```bash
     python postgis_data_import/lidar_to_pgpointcloud.py
     python postgis_data_import/terrain_to_postgis_rasters.py
     ```
 
-5. Create PostGIS functions to clip terrain rasters
+5. Create PostGIS functions to clip terrain rasters, substituting in the user and database name from your .env file
 
     ```bash
-    docker exec -it postgis_terrain psql -U user -d terrain -f sql/func_clip_terrain.sql
+    docker exec -it postgis_terrain psql -U <POSTGRES_USER> -d <POSTGRES_DB> -f sql/func_clip_terrain.sql
     ```
 
 6. Start the Flask application
@@ -58,12 +58,12 @@ Start the PostGIS docker container using the docker-compose file. Use the `-d` f
 docker compose up -d
 ```
 
-This will start a new `postgis_terrain` container. A new `terrain` database will be created. Upon initialization the `postgis_raster` extension will be enabled. The container uses `pgpointcloud/pointcloud` (**[pgPointCloud](https://pgpointcloud.github.io/pointcloud/)**) as its base image. This image comes pre-configured with the `pointcloud` and `pointcloud_postgis` extensions enabled.
+This will start a new `postgis_terrain` container. A new `terrain` database will be created. Upon initialization the `postgis_raster` extension will be enabled. The container uses `pgpointcloud/pointcloud` ([pgPointCloud](https://pgpointcloud.github.io/pointcloud/)) as its base image. This image comes pre-configured with the `pointcloud` and `pointcloud_postgis` extensions enabled.
 
-To confirm the container has started and is woking as expected you may run the following command to enter the `psql` interface.
+To confirm the container has started and is woking as expected you may run the following command to enter the `psql` interface (substitute in the user and database name from your .env file).
 
 ```bash
-docker exec -it postgis_terrain psql -U user -d terrain
+docker exec -it postgis_terrain psql -U <POSTGRES_USER> -d <POSTGRES_DB>
 ```
 
 In the `psql` terminal, confirm the activated extensions.
@@ -110,7 +110,7 @@ Scripts in the `postgis_data_import` directory are used to import the LIDAR data
 
 The `lidar_to_pgpointcloud.py` script is used to import the original LAZ file into PostGIS. Using the Python API for [PDAL](https://pdal.io/en/2.6.3/about.html) is used to read the file, defining a processing pipeline in JSON. The LIDAR points are chipped into smaller chunks (chips) of approximately 400 points each. PDAL provides readers and writers compatible with the PostGIS `pgPointCloud` extension. This writer is used to import the chips to a new `pointcloud` table in the PostGIS database.
 
-In PostGIS, the new `pointcloud` table stores this LIDAR as a table of `PcPatch` objects. Each patch represents a chip produced by PDAL, each storing a collection of approximately 400 `PcPoint` objects. While this table is not used further in this project, the `pgPointCloud` extension provides an efficient data storage model for LIDAR in PostGIS. Multiple LAS/LAZ datasets could be imported into this shared table to consolidate them into a single source.
+In PostGIS, the new `pointcloud_data` table stores this LIDAR as a table of `PcPatch` objects. Each patch represents a chip produced by PDAL, each storing a collection of approximately 400 `PcPoint` objects. While this table is not used further in this project, the `pgPointCloud` extension provides an efficient data storage model for LIDAR in PostGIS. Multiple LAS/LAZ datasets could be imported into this shared table to consolidate them into a single source.
 
 The `terrain_to_postgis_rasters.py` script is used to import the processed terrain rasters (DEM, slope, aspect) into PostGIS. It begins by listing `.tif` (GeoTIFF) files within the `data` directory. These rasters are accessible within the container via a mounted volume.
 

@@ -2,12 +2,16 @@ import os
 import glob
 import subprocess
 import time
+from dotenv import load_dotenv
 import psycopg2
 from osgeo import gdal
 
 start = time.perf_counter()
 
 print('\n--------IMPORTING TERRAIN RASTERS TO POSTGIS--------')
+
+# Load environment variables from .env file
+load_dotenv()
 
 def get_raster_srid(raster_path):
     # Open raster with GDAL and get WKT projection info
@@ -58,11 +62,11 @@ def raster_to_pgsql(container_tiff, srid_code):
 def execute_sql(sql):
     # Establish PostGIS DB connection
     conn = psycopg2.connect(
-        host="localhost",
-        port="5432",
-        dbname="terrain",
-        user="user",
-        password="password"
+        host=os.getenv('POSTGRES_HOST'),
+        port=os.getenv('POSTGRES_PORT'),
+        dbname=os.getenv('POSTGRES_DB'),
+        user=os.getenv('POSTGRES_USER'),
+        password=os.getenv('POSTGRES_PASSWORD')
     )
     cursor = conn.cursor()
     # Execute and commit SQL

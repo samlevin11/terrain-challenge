@@ -14,3 +14,4 @@ dependencies:
   - pyproj
   - psycopg2
   - flask
+  - python-dotenv
