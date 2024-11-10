@@ -14,7 +14,7 @@ DECLARE
 BEGIN
 
 SELECT
--- Clip the DEM raster based on the GeoJSON geometry
+    -- Clip the DEM raster based on the GeoJSON geometry
     ST_Clip(
         filleddem.rast,
         -- Project the Geometry to the same SRID as the raster before clipping
@@ -49,7 +49,7 @@ DECLARE
 BEGIN
 
 SELECT
--- Clip the slope raster based on the GeoJSON geometry
+    -- Clip the slope raster based on the GeoJSON geometry
     ST_Clip(
         slope.rast,
         -- Project the Geometry to the same SRID as the raster before clipping
@@ -84,7 +84,7 @@ DECLARE
 BEGIN
 
 SELECT
--- Clip the aspect raster based on the GeoJSON geometry
+    -- Clip the aspect raster based on the GeoJSON geometry
     ST_Clip(
         aspect.rast,
         -- Project the Geometry to the same SRID as the raster before clipping
@@ -120,9 +120,9 @@ RETURNS TABLE (
 BEGIN
 RETURN QUERY
 SELECT
--- Convert PostGIS rasters to GeoTIFF
--- Ensure GDAL drivers are enabled 
--- (configured in container startup, enable_extensions.sql)
+    -- Convert PostGIS rasters to GeoTIFF
+    -- Ensure GDAL drivers are enabled 
+    -- (configured in container startup, enable_extensions.sql)
     ST_AsTIFF(clip_dem(aoi_geojson)),
     ST_AsTIFF(clip_slope(aoi_geojson)),
     ST_AsTIFF(clip_aspect(aoi_geojson));

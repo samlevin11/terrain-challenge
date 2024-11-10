@@ -4,7 +4,6 @@
 
 -   [Docker](https://docs.docker.com/engine/install/)
 -   [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
--   [Node](https://nodejs.org/en/learn/getting-started/how-to-install-nodejs)
 
 ## Run
 
@@ -116,4 +115,12 @@ For each GeoTIFF, its SRID is identified using [GDAL](https://gdal.org/en/latest
 
 Finally, the SQL output of the `raster2pgsql` command is executed via a [psycopg](https://www.psycopg.org/docs/) database connection. This creates the terrain rasters in the PostGIS DB's persistent storage volume.
 
-## 4 PostGIS Raster Clipping Functions
+## 4. PostGIS Raster Clipping Functions
+
+Custom database functions are created in PostGIS to clip the terrain rasters by an Area of Interest (AOI).
+
+These functions (`clip_dem`, `clip_slope`, and `clip_aspect`) accept a [GeoJSON](https://geojson.org/) geometry as input. The GeoJSON is converted to a PostGIS Geometry data object, which is [transformed](https://postgis.net/docs/ST_Transform.html) to match the [coordinate system](https://postgis.net/docs/RT_ST_SRID.html) of the terrain raster being clipped. Finally, the terrain raster is clipped and returned from the function as a PostGIS raster object. A fourth, final function, `clip_terrain`, calls all three clipping functions at once, consolidating how they may invoked. In this case, the clipped rasters are returned as BYTEA (byte arrays) representing GeoTIFFs, converted using the [ST_AsTIFF](https://postgis.net/docs/RT_ST_AsTIFF.html) function. For this function to work properly, [GDAL drivers](https://postgis.net/docs/postgis_gdal_enabled_drivers.html) must be enabled (configured on container startup).
+
+The functions are stored in the `sql/func_clip_terrain.sql` file. Using a mounted volume, this directory is made available within the PostGIS Docker container. They are created in the database by connecting to the container's `psql` interface, executing the SQL file with the new functions.
+
+## 5. Flask Server Application
