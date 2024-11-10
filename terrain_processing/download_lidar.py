@@ -18,7 +18,7 @@ laz_path = os.path.join(data_dir, os.path.split(laz_url)[1])
 print(f'downloading to local file: {laz_path}')
 
 # Use request library to retrieve and write the file to local data
-resp = requests.get(laz_url, timeout=10)
+resp = requests.get(laz_url, timeout=30)
 with open(laz_path, 'wb') as file:
     file.write(resp.content)
 
