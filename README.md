@@ -7,7 +7,7 @@
 
 ## Run
 
-1. Start the PostGIS container
+1. Create an `.env` based on the `example.env` and start the PostGIS container
 
     ```bash
     docker compose up -d
@@ -36,7 +36,7 @@
     python postgis_data_import/terrain_to_postgis_rasters.py
     ```
 
-5. Create PostGIS functions to clip terrain rasters, substituting in the user and database name from your .env file
+5. Create PostGIS functions to clip terrain rasters, substituting in the user and database name from your `.env` file
 
     ```bash
     docker exec -it postgis_terrain psql -U <POSTGRES_USER> -d <POSTGRES_DB> -f sql/func_clip_terrain.sql
@@ -60,7 +60,7 @@ docker compose up -d
 
 This will start a new `postgis_terrain` container. A new `terrain` database will be created. Upon initialization the `postgis_raster` extension will be enabled. The container uses `pgpointcloud/pointcloud` ([pgPointCloud](https://pgpointcloud.github.io/pointcloud/)) as its base image. This image comes pre-configured with the `pointcloud` and `pointcloud_postgis` extensions enabled.
 
-To confirm the container has started and is woking as expected you may run the following command to enter the `psql` interface (substitute in the user and database name from your .env file).
+To confirm the container has started and is woking as expected you may run the following command to enter the `psql` interface (substitute in the user and database name from your `.env` file).
 
 ```bash
 docker exec -it postgis_terrain psql -U <POSTGRES_USER> -d <POSTGRES_DB>
@@ -154,3 +154,14 @@ The `/terrain_extent` endpoint is used to query the PostGIS database for the ext
 Three endpoints are used to query the various terrain rasters: `/clip_dem`, `/clip_slope`, and `/clip_aspect`. These endpoints accept a `POST` requests containing a GeoJSON geometry in the body. This GeoJSON represents an AOI used to clip the terrain. For each endpoint, the custom clipping functions defined in the PostGIS database are invoked.
 
 The results are returned to the server as GeoTIFF byte arrays. Rather than returning the resulting GeoTIFF byte array to the client all at once, the results broken into many smaller chunks and streamed back to the client. This significantly improves the application performance, allowing the client to start processing and displaying the results much more rapidly.
+
+## 7. Source Data and PostGIS Export
+
+The .LAZ file downloaded from USGS and the processed terrain rasters are included in the `data/preprepared` directory. These data will be downloaded and created using the terrain processing scripts, but are included here for convenience. 
+
+A PostGIS database export is also included in this `data/preprepared` directory. Once all data and custom functions were added, the PostGIS database was exported using the [`pg_dump`](https://www.postgresql.org/d.ocs/current/app-pgdump.html) backup utility. The utility was run with the following parameters (variables substituted from `.env` file).
+
+```bash
+pg_dump -h <POSTGRES_HOST> -U <POSTRES_USER> -W -F c -b -v --exclude-table=public.pointcloud_data -f sql/<POSTGRES_DB>.backup <POSTGRES_DB>
+```
+The `-b` option includes large objects such as PostGIS rasters and pgPointCloud data in the export. The `-F c` uses the custom output format. One table, `public.pointcloud_data` was excluded due to size limitations.
