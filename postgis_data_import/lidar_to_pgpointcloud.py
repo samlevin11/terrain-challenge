@@ -5,6 +5,8 @@ import time
 
 start = time.perf_counter()
 
+print('\n--------IMPORTING LIDAR TO POSTGIS POINT CLOUD--------')
+
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 laz_path = os.path.join(data_dir, 'USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640.laz')
 
@@ -36,4 +38,4 @@ pipeline = pdal.Pipeline(pipeline_json)
 count = pipeline.execute()
 
 
-print(f'POINT CLOUD LOAD TIME: {round(time.perf_counter() - start)} seconds')
+print(f'POINT CLOUD IMPORT TIME: {round(time.perf_counter() - start)} seconds')

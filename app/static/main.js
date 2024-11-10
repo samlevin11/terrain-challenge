@@ -100,8 +100,8 @@ async function initializeExtent() {
 async function clipByAoi() {
     // Reset to remove existing terrain results
     reset();
-    // Hide AOI once after clip
-    map.removeLayer(aoi_layer);
+
+    // Get the GeoJSON geometry of the AOI and zoom to it
     geojson = aoi_layer.toGeoJSON().geometry;
     map.fitBounds(aoi_layer.getBounds());
 

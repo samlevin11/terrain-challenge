@@ -14,18 +14,18 @@ DECLARE
 BEGIN
 
 SELECT
-    -- Clip the DEM raster based on the GeoJSON geometry
+    -- Clip the Filled DEM raster based on the GeoJSON geometry
     ST_Clip(
-        filleddem.rast,
+        demfilled.rast,
         -- Project the Geometry to the same SRID as the raster before clipping
         ST_Transform(
             ST_GeomFromGeoJSON(aoi_geojson),
-            ST_SRID(filleddem.rast)
+            ST_SRID(demfilled.rast)
         )
     ) as dem_rast 
 INTO dem_rast
 FROM
-    public.filleddem;
+    public.demfilled;
 
 RETURN dem_rast; 
    

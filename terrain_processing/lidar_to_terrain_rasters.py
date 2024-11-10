@@ -6,10 +6,15 @@ from rasterio.crs import CRS
 
 start = time.perf_counter()
 
-wbt = whitebox.WhiteboxTools()
+print('\n--------PROCESSING LIDAR INTO TERRAIN RASTERS--------')
 
 # Set data directory where LAZ was previously downloaded
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+# Define the name of the downloaded LAZ file
+laz_file = 'USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640.laz'
+
+# Intialize Whitebox Tools
+wbt = whitebox.WhiteboxTools()
 print(f'setting WBT working directory: {data_dir}')
 wbt.set_working_dir(data_dir)
 
@@ -17,8 +22,7 @@ wbt.set_working_dir(data_dir)
 # Only include LAST returns, class 2 points (ground)
 # 1 meter resolution
 print('interpolating raw DEM LAZ')
-laz_file = 'USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640.laz'
-raw_dem = os.path.splitext(laz_file)[0] + '_RawDEM.tif'
+raw_dem = os.path.splitext(laz_file)[0] + '_DEMRaw.tif'
 wbt.lidar_idw_interpolation(
     i=laz_file,
     output=raw_dem,
@@ -42,7 +46,7 @@ with rasterio.open(os.path.join(data_dir, raw_dem), 'r+') as dem:
 
 print('filling nodata holes')
 # Fill NoData holes in the DEM
-filled_dem = os.path.splitext(laz_file)[0] + '_FilledDEM.tif'
+filled_dem = os.path.splitext(laz_file)[0] + '_DEMFilled.tif'
 wbt.fill_missing_data(
     i=raw_dem,
     output=filled_dem,

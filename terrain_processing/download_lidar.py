@@ -4,10 +4,10 @@ import requests
 
 start = time.perf_counter()
 
-# Create a directory to download the LAZ file to
+print('\n--------DOWNLOADING LIDAR DATA FROM USGS--------')
+
+# Define the shared volume directory to download the LAZ file to
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
-print(f'creating data directory: {data_dir}')
-os.mkdir(data_dir)
 
 # Metadata links
 # https://www.sciencebase.gov/catalog/item/62b6b4a2d34e8f4977cc320a

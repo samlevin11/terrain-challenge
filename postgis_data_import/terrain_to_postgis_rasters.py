@@ -7,6 +7,7 @@ from osgeo import gdal
 
 start = time.perf_counter()
 
+print('\n--------IMPORTING TERRAIN RASTERS TO POSTGIS--------')
 
 def get_raster_srid(raster_path):
     # Open raster with GDAL and get WKT projection info

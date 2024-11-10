@@ -31,7 +31,7 @@ def terrain_extent():
     # Returns a TIFF byte array
     cursor.execute(
         'SELECT ST_AsGeoJSON(ST_Transform(ST_MinConvexHull(rast), 4326))\
-            FROM public.filleddem'
+            FROM public.demfilled'
     )
     extent_geojson = cursor.fetchone()[0]
 
