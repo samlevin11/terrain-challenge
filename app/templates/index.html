@@ -19,20 +19,34 @@
                 height: 100vh;
             }
 
-            #clip-terrain-button {
+            #controls {
+                display: flex;
+                gap: 10px;
                 position: absolute;
                 bottom: 20px;
                 left: 20px;
-                padding: 10px;
                 z-index: 400;
+            }
+
+            #clip-terrain-button {
+                padding: 10px;
+            }
+
+            #reset-button {
+                padding: 10px;
             }
         </style>
     </head>
     <body>
         <div id="map"></div>
-        <button id="clip-terrain-button" onclick="clipByAoi()">
-            CLIP TERRAIN
-        </button>
+        <div id="controls">
+            <button id="clip-terrain-button" onclick="clipByAoi()">
+                CLIP TERRAIN
+            </button>
+            <button id="reset-button" onclick="reset()">
+                RESET RESULTS
+            </button>
+        </div>
 
         <script
             src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"

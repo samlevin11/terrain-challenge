@@ -13,15 +13,14 @@ const osmBaseLayer = L.tileLayer(
 osmBaseLayer.addTo(map);
 
 // Initialize layer controls
-// Added to map once AOI is created
-let layerControl;
+let layerControl = L.control.layers(null, null, { collapsed: false });
+layerControl.addTo(map);
 
-// For tracking the Area of Interest
+// For tracking the Area of Interest layer
 let aoi_layer;
 
-let dem_layer;
-let slope_layer;
-let aspect_layer;
+// For tracking terrain rasters addedto the map
+let terrain_rasters = [];
 
 // Add and configure Geoman toolbar
 // Enable polygon drawing options
@@ -42,13 +41,14 @@ map.pm.addControls({
 });
 
 const clipTerrainButton = document.getElementById('clip-terrain-button');
-console.log('GET AOI BUTTON', clipByAoi);
 clipTerrainButton.disabled = true;
 
-map.on('pm:create', (e) => {
-    layerControl = L.control.layers();
+const resetButton = document.getElementById('reset-button');
+resetButton.disabled = true;
 
+map.on('pm:create', (e) => {
     aoi_layer = e.layer;
+    layerControl.addOverlay(aoi_layer, 'Area of Interest');
 
     map.pm.addControls({
         drawPolygon: false,
@@ -59,12 +59,10 @@ map.on('pm:create', (e) => {
     });
 
     clipTerrainButton.disabled = false;
-
-    layerControl.addOverlay(aoi_layer, 'Area of Interest');
-    layerControl.addTo(map);
 });
 
 map.on('pm:remove', (e) => {
+    layerControl.removeLayer(aoi_layer);
     aoi_layer = null;
 
     map.pm.addControls({
@@ -76,25 +74,23 @@ map.on('pm:remove', (e) => {
     });
 
     clipTerrainButton.disabled = true;
-
-    layerControl.remove();
-    layerControl = null;
-
-    map.removeLayer(dem_layer);
-    map.removeLayer(slope_layer);
-    map.removeLayer(aspect_layer);
 });
 
 async function clipByAoi() {
+    reset();
+
     geojson = aoi_layer.toGeoJSON().geometry;
-    console.log('AOI GEOJSON', geojson);
     map.fitBounds(aoi_layer.getBounds());
 
-    [dem_layer, slope_layer, aspect_layer] = await Promise.all([
-        clipTerrain('clip_dem', geojson, 'Elevation'),
-        clipTerrain('clip_slope', geojson, 'Slope'),
-        clipTerrain('clip_aspect', geojson, 'Aspect'),
-    ]);
+    terrain_rasters = terrain_rasters.concat(
+        await Promise.all([
+            clipTerrain('clip_dem', geojson, 'Elevation'),
+            clipTerrain('clip_slope', geojson, 'Slope'),
+            clipTerrain('clip_aspect', geojson, 'Aspect'),
+        ])
+    );
+
+    resetButton.disabled = false;
 }
 
 async function clipTerrain(endpoint, geojson, layerName) {
@@ -122,4 +118,14 @@ async function tiffToGeoRaster(tiff) {
         georaster: georaster,
     });
     return grLayer;
+}
+
+function reset() {
+    console.log('RESET');
+    terrain_rasters.forEach((r) => {
+        map.removeLayer(r);
+        layerControl.removeLayer(r);
+    });
+
+    resetButton.disabled = true;
 }
