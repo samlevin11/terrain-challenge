@@ -96,10 +96,10 @@ The `download_lidar.py` script is used to programmatically download a LAZ file f
 
 The following script `lidar_to_terrain_rasters.py` is used to create a digital elevation model (DEM), along with slope and aspect rasters. The [Whitebox Tools](https://www.whiteboxgeo.com/geospatial-software/) library is used to create these terrain rasters. Inverse distance weighting (IDW) interpolation is used to generate a 1 meter raw DEM. Only points classified as final ground returns (class 2, last return) are used in the interpolation. Since the initial raw DEM has NoData holes from a lack of LIDAR returns, the holes are filled to prevent data gaps. This filled DEM is then used to calculate slope (degrees) and aspect (degrees). Since this particular LAZ file does not contain coordinate reference system (CRS) information in the header, the CRS is obtained from the file [metadata](https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/metadata/WY_SouthCentral_2020_D20/WY_SouthCentral_3_2020/reports/vendor_provided_xml/WY_South_Central_3_2020_D20_Classified_Point_Cloud_Metadata_222437.xml) and determined to be NAD83 (2011) UTM Zone 13 meters (EPSG 6342). [Rasterio](https://rasterio.readthedocs.io/en/stable/intro.html) is used to assert the spatial reference of the output rasters. The following rasters are created:
 
-`data/USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640_RawDEM.tif`
-`data/USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640_FilledDEM.tif`
-`data/USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640_Slope.tif`
-`data/USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640_Aspect.tif`
+-   `data/USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640_RawDEM.tif`
+-   `data/USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640_FilledDEM.tif`
+-   `data/USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640_Slope.tif`
+-   `data/USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640_Aspect.tif`
 
 ## 3. PostGIS Data Import
 
@@ -113,9 +113,16 @@ The `terrain_to_postgis_rasters.py` script is used to import the processed terra
 
 For each GeoTIFF, its SRID is identified using [GDAL](https://gdal.org/en/latest/api/python/raster_api.html) and [OSR](https://gdal.org/en/latest/api/python/spatial_ref_api.html). Using a Python `subprocess`, the [`raster2pgsql`](https://postgis.net/docs/using_raster_dataman.html#RT_Raster_Loader) program within the PostGIS container is run. Since this program may not be available on the host machine, it can be more reliably used via the container. This converts the rasters to a SQL command that may be used to load them in PostGIS. Various flags and configurations are provided to specify the name of the new raster table (based on the filename), SRID, enforcing raster contraints, etc. Due to the relatively small size of the data, tiling is not used in this example.
 
-Finally, the SQL output of the `raster2pgsql` command is executed via a [psycopg](https://www.psycopg.org/docs/) database connection. This creates the terrain rasters in the PostGIS DB's persistent storage volume.
+Finally, the SQL output of the `raster2pgsql` command is executed via a [psycopg](https://www.psycopg.org/docs/) database connection. This creates the terrain rasters in the PostGIS DB's persistent storage volume. The following database tables are created:
 
-## 4. PostGIS Raster Clipping Functions
+-   `public.rawdem`
+-   `public.filleddem`
+-   `public.slope`
+-   `public.aspect`
+
+Since the `-C` option is passed when to the `raster2pgsql` program, each imported raster is properly registered in the database's [`raster_columns`](https://postgis.net/docs/using_raster_dataman.html#RT_Raster_Catalog) catalog.
+
+## 4. PostGIS Raster Clipping[ Functions
 
 Custom database functions are created in PostGIS to clip the terrain rasters by an Area of Interest (AOI).
 
@@ -123,4 +130,27 @@ These functions (`clip_dem`, `clip_slope`, and `clip_aspect`) accept a [GeoJSON]
 
 The functions are stored in the `sql/func_clip_terrain.sql` file. Using a mounted volume, this directory is made available within the PostGIS Docker container. They are created in the database by connecting to the container's `psql` interface, executing the SQL file with the new functions.
 
-## 5. Flask Server Application
+## 5. Leaflet Frontend Application
+
+A [Leaflet](https://leafletjs.com/) frontend application allows users to define an Area of Interest (AOI) to clip and view terrain data within. This application is built using vanilla JavaScript and HTML, consisting of a simple `index.html` and `main.js` file. In the future this could be enhanced to use a frontend framework like [React](https://react.dev/) or [Angular](https://angular.dev/).
+
+As soon as the map loads, the extent of the available terrain in PostGIS is retrieved from the `/terrain_extent` endpoint and used to set the bounds of the map. A red boundary shape will display around the area of existing terrain data. This allows the application to dynamically determine where terrain exists, rather than simply initializing on a pre-defined location.
+
+The application uses the [Leaflet-Geoman](https://geoman.io/docs/leaflet/) plugin to allow the user to define an AOI using Rectangle and Polygon drawing modes. Once and AOI has been defined, the `CLIP TERRAIN` button in the lower left corner becomes enabled. Clicking this button sends requests to the backend clipping endpoints ([explored in the following section](#6.-flask-backend-server)) based on the user's AOI. The AOI shape will be hidden once a clipping operation has been issued. Clipped terrain rasters are returned to the client as GeoTIFFs. These are loaded and displayed in the Leaflet map using the [GeoRasterLayer](https://github.com/geotiff/georaster-layer-for-leaflet) plugin.
+
+A Leaflet layers control is used to switch between clipped terrain rasters, ensuring only one is visible in the map one once. The AOI layer may also be toggled on/off using this control. 
+
+If desired, the user may modify their AOI shape and rerun the clipping process. The existing clipped terrain rasters will be removed from the map and replaced by the new clipped terrain rasters. To clear all clipped raster results from the map, click the `RESET RESULTS` button, which will remove the layers from the map and layer control. 
+
+
+## 6. Flask Backend Server
+
+A simple [Flask](https://flask.palletsprojects.com/en/stable/) server is used to provide access to the PostGIS database terrain data and clipping functions. The server executes queries in the PostGIS database via a `psycopg2` connection. Four endpoints are defined. 
+
+The `/terrain_extent` endpoint is used to query the PostGIS database for the extent of the terrain rasters. Using the [ST_MinConvexHull](https://postgis.net/docs/RT_ST_MinConvexHull.html) PostGIS function, the extent of the elevation raster is retrieved. This is returned as a GeoJSON feature in WGS84 (SRID 4326). This endpoint is used to set the initial extent of the map when it loads and provide a boundary shape for the valid terrain area. 
+
+Three endpoints are used to query the various terrain rasters: `/clip_dem`, `/clip_slope`, and `/clip_aspect`. These endpoints accept a `POST` requests containing a GeoJSON geometry in the body. This GeoJSON represents an AOI used to clip the terrain. For each endpoint, the custom clipping functions defined in the PostGIS database are invoked. 
+
+The results are returned to the server as GeoTIFF byte arrays. Rather than returning the resulting GeoTIFF byte array to the client all at once, the results broken into many smaller chunks and streamed back to the client. This significantly improves the application performance, allowing the client to start processing and displaying the results much more rapidly. 
+
+
