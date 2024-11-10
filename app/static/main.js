@@ -91,6 +91,7 @@ async function initializeExtent() {
         style: () => {
             return { fill: false, stroke: true, color: '#800000' };
         },
+        pmIgnore: true,
     });
     extent.addTo(map);
     map.fitBounds(extent.getBounds());
