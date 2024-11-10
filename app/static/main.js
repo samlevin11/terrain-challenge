@@ -1,5 +1,6 @@
 // Initialize the Leaflet map
-const map = L.map('map').setView([41.23133, -105.38772], 15);
+// Centered on the center of the contiguous United States
+const map = L.map('map').setView([39.833333, -98.583333], 5);
 
 // Add OpenStreetMap base maps as tile layers
 const osmBaseLayer = L.tileLayer(
@@ -76,9 +77,30 @@ map.on('pm:remove', (e) => {
     clipTerrainButton.disabled = true;
 });
 
-async function clipByAoi() {
-    reset();
+// Initialize extent to terrain boundary
+initializeExtent();
 
+// Retrieve the extent of the terrain available in DB
+// Add as a red boundary feature and zoom to
+async function initializeExtent() {
+    response = await fetch(`http://127.0.0.1:5000/terrain_extent`, {
+        method: 'GET',
+    });
+    extent_geojson = await response.json();
+    extent = L.geoJSON(extent_geojson, {
+        style: () => {
+            return { fill: false, stroke: true, color: '#800000' };
+        },
+    });
+    extent.addTo(map);
+    map.fitBounds(extent.getBounds());
+}
+
+async function clipByAoi() {
+    // Reset to remove existing terrain results
+    reset();
+    // Hide AOI once after clip
+    map.removeLayer(aoi_layer);
     geojson = aoi_layer.toGeoJSON().geometry;
     map.fitBounds(aoi_layer.getBounds());
 
@@ -121,7 +143,6 @@ async function tiffToGeoRaster(tiff) {
 }
 
 function reset() {
-    console.log('RESET');
     terrain_rasters.forEach((r) => {
         map.removeLayer(r);
         layerControl.removeLayer(r);

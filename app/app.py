@@ -5,9 +5,42 @@ import psycopg2
 app = Flask(__name__)
 
 
+def get_db_connection():
+    conn = psycopg2.connect(
+        host='localhost',
+        port='5432',
+        dbname='terrain',
+        user='user',
+        password='password'
+    )
+    return conn
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
+
+@app.route('/terrain_extent', methods=['POST', 'GET'])
+def terrain_extent():
+    # Establish connection to terrain database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Use the provided terrain_query string to call raster clipping functions
+    # Returns a TIFF byte array
+    cursor.execute(
+        'SELECT ST_AsGeoJSON(ST_Transform(ST_MinConvexHull(rast), 4326))\
+            FROM public.filleddem'
+    )
+    extent_geojson = cursor.fetchone()[0]
+
+    # Close the connection
+    cursor.close()
+    conn.close()
+
+    # return extent as GeoJSON text
+    return extent_geojson
 
 
 @app.route('/clip_dem', methods=['POST'])
@@ -72,13 +105,7 @@ def generate(bytes):
 
 def run_clip_query(aoi_geojson_text, terrain_query):
     # Establish connection to terrain database
-    conn = psycopg2.connect(
-        host='localhost',
-        port='5432',
-        dbname='terrain',
-        user='user',
-        password='password'
-    )
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     # Use the provided terrain_query string to call raster clipping functions
