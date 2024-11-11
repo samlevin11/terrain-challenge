@@ -83,7 +83,7 @@ An initialization script mounted to `docker-entrypoint-initdb.d` is used to enab
 
 ## 2. Terrain Pipeline
 
-The `terrain_pipeline.py` script is a full data pipeline for downloading LIDAR data, processing terrain rasters, and loading data into PostGIS. It invokes the scripts described below. 
+The `terrain_pipeline.py` script is a full data pipeline for downloading LIDAR data, processing terrain rasters, and loading data into PostGIS. It invokes the scripts described below.
 
 ### 2.1. Terrain Processing
 
@@ -173,13 +173,15 @@ The processing methodology explored in this project could be enhanced to create 
 
 This would begin by defining sources from which the LIDAR data should be downloaded. For most LIDAR data collections in the USGS National Map 3DEP, an inventory of available files is provided. For example, the WY_SouthCentral_2020_D20 data used in this project has a file inventory available [here](https://rockyweb.usgs.gov/vdelivery/Datasets/Staged/Elevation/LPC/Projects/WY_SouthCentral_2020_D20/WY_SouthCentral_3_2020/0_file_download_links.txt). A `cron` job could be scheduled to periodically retrieve these file inventories and compare them against inventories of previously processed data. When new files are identified, this would trigger the terrain processing pipeline. Many projects and regions could potentially be monitored for changes and new additions.
 
-While the scripts used in this project currently process a single, pre-defined LAZ file, they could be readily refactored into modules for reuse. A terrain processing module and data loading module might be appropriate to separate the two distinct stages of the pipeline. This pipeline could accepts a URL to the newly identified LAZ file. Calling this pipeline with a new file URL would kick off the process of downloading the LAZ file, processing it into terrain rasters, and loading the data into PostGIS.
+While the scripts used in this project currently process a single, pre-defined LAZ file, each new LAZ could be run through a pipeline similar to the `terrain_pipeline.py`. Scripts used here could be enhanced and refactored into more robust modules for reuse. A terrain processing module and data loading module might be appropriate to separate the two distinct stages of the pipeline. This pipeline could accepts a URL to the newly identified LAZ file. Calling this pipeline with a new file URL would kick off the process of downloading the LAZ file, processing it into terrain rasters, and loading the data into PostGIS.
 
 Since not all LAS/LAZ files contain their spatial reference information in the header, this might need to be provided as a second argument to ensure the data is correctly defined. This can typically be retrieved from the metadata available for each file. In some cases, this spatial reference information can be identified automatically using libraries such as `laspy`.
 
 Depending on how whether multiple projects or regions are being combined, the data might the data might need to be saved in different databases or tables to manage each area separately. Alternatively, if multiple sources are being combined, the data might need to be reprojected into a single, consistent coordinate system appropriate for the extent.
 
 Since not all LIDAR data is collected with the same accuracy and resolution, the pipeline might also accept arguments to choose the spatial resolution of the resulting terrain rasters, IDW parameters, etc.
+
+Ideally, this entire pipeline would be containerized in a new Docker container.
 
 **2. How would you improve on the application you just created? What would you do to guarantee good performance of the web application for the end users?**
 
@@ -189,4 +191,6 @@ At the database level, tiling of the terrain rasters would support more efficien
 
 Depending on the scale of the data, [`outdb`](https://postgis.net/docs/using_raster_dataman.html#RT_Cloud_Rasters) rasters and [Cloud Optimized GeoTIFFs](http://cogeo.org/) might be used to provide more efficient data access. COGs excel at providing efficient raster data access for client applications, allowing them to request only small ranges of the data as required. Using `outdb` rasters, PostGIS can take advantage of these same range requests, allowing it to efficiently retrieve only the data necessary for a given operation. This approach would require more significant changes to the workflow established here so far, as the COGs would need to be copied to the file server and then referenced by PostGIS rather than loaded directly.
 
-In the current Flask server implementation, clipped raster results are streamed back to the client. Depending on the size of the clipped rasters expected in production use, this chunk size might be adjusted to better balance memory usage and transfer speed. 
+In the current Flask server implementation, clipped raster results are streamed back to the client. Depending on the size of the clipped rasters expected in production use, this chunk size might be adjusted to better balance memory usage and transfer speed.
+
+While the current frontend application is built with vanilla JavaScript and HTML, a frontend framework such as React or Angular could be used to build a more robust UI. Using TypeScript would also offer development advantages, reducing the chance development errors with type-checking. 
