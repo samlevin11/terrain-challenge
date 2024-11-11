@@ -9,6 +9,8 @@
 
 1. Create an `.env` based on the `example.env` and start the PostGIS container in detached mode
 
+    _Note: you may also simply rename `example.env` to `.env` for default environment variables_
+
     ```bash
     docker compose up -d
     ```
