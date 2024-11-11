@@ -1,3 +1,6 @@
 .env
 /ignore/
 *.pyc
+# Ignore everything in /data except /data/preprepared
+/data/*
+!/data/preprepared/
