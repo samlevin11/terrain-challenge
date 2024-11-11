@@ -1,14 +1,9 @@
 import os
-import glob
 import subprocess
 import time
 from dotenv import load_dotenv
 import psycopg2
 from osgeo import gdal
-
-start = time.perf_counter()
-
-print('\n--------IMPORTING TERRAIN RASTERS TO POSTGIS--------')
 
 # Load environment variables from .env file
 load_dotenv()
@@ -77,20 +72,43 @@ def execute_sql(sql):
     conn.close()
 
 
-# Establish path to the host data folder
-host_data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
-# Establish path to the container data folder
-container_data_dir = '/data'
+def terrain_to_postgis_rasters(terrain_geotiffs):
+    start = time.perf_counter()
 
-# List GeoTIFFs in the host folder
-host_tiffs = glob.glob(os.path.join(host_data_dir,'*.tif'))
-print(f'HOST GEOTIFFs({len(host_tiffs)}): {host_tiffs}')
+    print('\n--------IMPORTING TERRAIN RASTERS TO POSTGIS--------')
+    print(f'GEOTIFFs({len(terrain_geotiffs)}): {terrain_geotiffs}')
 
-for host_tiff in host_tiffs:
-    print('----------------\n' + host_tiff)
-    srid = get_raster_srid(host_tiff)
-    container_path = host_to_container_data_path(host_tiff, container_data_dir)
-    rast_to_db_sql = raster_to_pgsql(container_path, srid)
-    execute_sql(rast_to_db_sql)
+    # Establish path to the container data folder
+    container_data_dir = '/data'
 
-print(f'RASTER IMPORT RUN TIME: {round(time.perf_counter() - start)} seconds')
+    for host_geotiff in terrain_geotiffs:
+        print('----------------\n' + host_geotiff)
+        srid = get_raster_srid(host_geotiff)
+        container_path = host_to_container_data_path(host_geotiff, container_data_dir)
+        rast_to_db_sql = raster_to_pgsql(container_path, srid)
+        execute_sql(rast_to_db_sql)
+
+    print(f'RASTER IMPORT RUN TIME: {round(time.perf_counter() - start)} seconds')
+
+
+if __name__ == '__main__':
+    terrain_to_postgis_rasters(
+        [
+            os.path.join(
+                os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data')),
+                'USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640_DEMRaw.tif'
+            ),
+            os.path.join(
+                os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data')),
+                'USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640_DEMFilled.tif'
+            ),
+            os.path.join(
+                os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data')),
+                'USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640_Slope.tif'
+            ),
+            os.path.join(
+                os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data')),
+                'USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640_Aspect.tif'
+            ),
+        ]
+    )

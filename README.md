@@ -7,42 +7,34 @@
 
 ## Run
 
-1. Create an `.env` based on the `example.env` and start the PostGIS container
+1. Create an `.env` based on the `example.env` and start the PostGIS container in detached mode
 
     ```bash
     docker compose up -d
     ```
 
-2. Create Python Conda environment
+2. Create and activate Python Conda environment
 
     ```bash
     conda env create -f environment.yml
     conda activate terrain_env
     ```
 
-3. Download LIDAR data and process terrain
+3. Run the data pipeline to download LIDAR, process terrain raters, import LIDAR and terrain rasters into PostGIS
 
     _Note: the initial data download may take a couple of minutes (approximately 69MB of LIDAR data)_
 
     ```bash
-    python terrain_processing/download_lidar.py
-    python terrain_processing/lidar_to_terrain_rasters.py
+    python terrain_pipeline.py
     ```
 
-4. Import LIDAR data and terrain rasters into PostGIS
-
-    ```bash
-    python postgis_data_import/lidar_to_pgpointcloud.py
-    python postgis_data_import/terrain_to_postgis_rasters.py
-    ```
-
-5. Create PostGIS functions to clip terrain rasters, substituting in the user and database name from your `.env` file
+4. Create PostGIS functions to clip terrain rasters, substituting in the user and database name from your `.env` file
 
     ```bash
     docker exec -it postgis_terrain psql -U <POSTGRES_USER> -d <POSTGRES_DB> -f sql/func_clip_terrain.sql
     ```
 
-6. Start the Flask application
+5. Start the Flask application
     ```bash
     python app/app.py
     ```
