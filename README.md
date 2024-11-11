@@ -81,7 +81,11 @@ Four volumes are mounted to the container.
 
 An initialization script mounted to `docker-entrypoint-initdb.d` is used to enable the `postgis_raster` extension and [enable GDAL drivers](https://postgis.net/docs/postgis_gdal_enabled_drivers.html) on startup.
 
-## 2. LIDAR Processing
+## 2. Terrain Pipeline
+
+The `terrain_pipeline.py` script is a full data pipeline for downloading LIDAR data, processing terrain rasters, and loading data into PostGIS. It invokes the scripts described below. 
+
+### 2.1. Terrain Processing
 
 Scripts in the `terrain_processing` directory are used to download and process LIDAR data into a collection of terrain rasters (DEM, slope, and aspect).
 
@@ -96,7 +100,7 @@ The following script `lidar_to_terrain_rasters.py` is used to create a digital e
 -   `data/USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640_Slope.tif`
 -   `data/USGS_LPC_WY_SouthCentral_2020_D20_13TDF670640_Aspect.tif`
 
-## 3. PostGIS Data Import
+### 2.2. PostGIS Data Import
 
 Scripts in the `postgis_data_import` directory are used to import the LIDAR data and processed terrain rasters into PostGIS.
 
@@ -117,7 +121,7 @@ Finally, the SQL output of the `raster2pgsql` command is executed via a [psycopg
 
 Since the `-C` option is passed when to the `raster2pgsql` program, each imported raster is properly registered in the database's [`raster_columns`](https://postgis.net/docs/using_raster_dataman.html#RT_Raster_Catalog) catalog.
 
-## 4. PostGIS Raster Clipping[ Functions
+## 3. PostGIS Raster Clipping Functions
 
 Custom database functions are created in PostGIS to clip the terrain rasters by an Area of Interest (AOI).
 
@@ -125,7 +129,9 @@ These functions (`clip_dem`, `clip_slope`, and `clip_aspect`) accept a [GeoJSON]
 
 The functions are stored in the `sql/func_clip_terrain.sql` file. Using a mounted volume, this directory is made available within the PostGIS Docker container. They are created in the database by connecting to the container's `psql` interface, executing the SQL file with the new functions.
 
-## 5. Leaflet Frontend Application
+## 4. Leaflet + Flask Application
+
+### 4.1. Leaflet Frontend Application
 
 A [Leaflet](https://leafletjs.com/) frontend application allows users to define an Area of Interest (AOI) to clip and view terrain data within. This application is built using vanilla JavaScript and HTML, consisting of a simple `index.html` and `main.js` file. In the future this could be enhanced to use a frontend framework like [React](https://react.dev/) or [Angular](https://angular.dev/).
 
@@ -137,7 +143,7 @@ A Leaflet layers control is used to switch between clipped terrain rasters, ensu
 
 If desired, the user may modify their AOI shape and rerun the clipping process. The existing clipped terrain rasters will be removed from the map and replaced by the new clipped terrain rasters. To clear all clipped raster results from the map, click the `RESET RESULTS` button, which will remove the layers from the map and layer control.
 
-## 6. Flask Backend Server
+### 4.2. Flask Backend Server
 
 A simple [Flask](https://flask.palletsprojects.com/en/stable/) server is used to provide access to the PostGIS database terrain data and clipping functions. The server executes queries in the PostGIS database via a `psycopg2` connection. Four endpoints are defined.
 
@@ -147,7 +153,7 @@ Three endpoints are used to query the various terrain rasters: `/clip_dem`, `/cl
 
 The results are returned to the server as GeoTIFF byte arrays. Rather than returning the resulting GeoTIFF byte array to the client all at once, the results broken into many smaller chunks and streamed back to the client. This significantly improves the application performance, allowing the client to start processing and displaying the results much more rapidly.
 
-## 7. Source Data and PostGIS Export
+## 5. Source Data and PostGIS Export
 
 The .LAZ file downloaded from USGS and the processed terrain rasters are included in the `data/preprepared` directory. These data will be downloaded and created using the terrain processing scripts, but are included here for convenience.
 
